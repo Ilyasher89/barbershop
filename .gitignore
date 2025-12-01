@@ -47,7 +47,7 @@ desktop.ini
 *.Zone.Identifier
 
 # Spring Boot
-application.properties # ИСКЛЮЧАЕМ! Создадим шаблон.
+application.properties
 !application.properties.example
 
 # PostgreSQL (локальные данные)

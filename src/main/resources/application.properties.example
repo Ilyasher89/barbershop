@@ -1,0 +1,10 @@
+# Пример конфигурации. Скопируйте в application.properties и заполните своими данными
+spring.datasource.url=jdbc:postgresql://localhost:5432/barbershop_db
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+server.port=8080

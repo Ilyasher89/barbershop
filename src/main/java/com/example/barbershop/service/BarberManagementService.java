@@ -9,7 +9,6 @@ import com.example.barbershop.repository.ServiceRepository;
 import com.example.barbershop.repository.BarberServiceRepository;
 import com.example.barbershop.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.Optional;
 /**
  * Сервис для управления парикмахерами и их услугами.
  */
-@Service
+@org.springframework.stereotype.Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BarberManagementService {

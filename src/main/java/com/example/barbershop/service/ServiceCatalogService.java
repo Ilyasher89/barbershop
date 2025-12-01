@@ -3,7 +3,6 @@ package com.example.barbershop.service;
 import com.example.barbershop.entity.Service;
 import com.example.barbershop.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.List;
 /**
  * Сервис для работы с каталогом услуг.
  */
-@Service
+@org.springframework.stereotype.Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ServiceCatalogService {

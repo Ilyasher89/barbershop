@@ -40,4 +40,9 @@ public class HomeController {
     public String login() {
         return "login"; // templates/login.html
     }
+
+    @GetMapping("/api-test")
+    public String apiTestPage() {
+        return "api-test"; // Открывает templates/api-test.html
+    }
 }

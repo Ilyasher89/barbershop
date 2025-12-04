@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Тест REST API - Парикмахерская</title>
-  <!-- Подключаем Bootstrap для красивого оформления -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    .container { max-width: 800px; }
+    .container { max-width: 900px; }
     .card { margin-bottom: 20px; }
     pre {
       background: #f8f9fa;
@@ -14,70 +13,86 @@
       border-radius: 5px;
       max-height: 300px;
       overflow: auto;
+      font-size: 0.9em;
     }
-    .success { color: green; }
-    .error { color: red; }
+    .success { color: green; font-weight: bold; }
+    .error { color: red; font-weight: bold; }
+    .token-display {
+      background: #e9ecef;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 0.8em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   </style>
 </head>
 <body>
 <div class="container mt-4">
-  <h1 class="mb-4">🧪 Тестирование REST API</h1>
-  <p class="lead">Парикмахерская "Стиль" - тестовая панель для проверки API</p>
+  <h1 class="mb-4">🧪 Тестирование REST API с JWT</h1>
+  <p class="lead">Парикмахерская "Стиль" - тестовая панель</p>
 
-  <!-- Тест 1: GET /api/auth/test -->
+  <!-- Токен и информация -->
   <div class="card">
     <div class="card-header">
-      <h5 class="mb-0">1. Тест API (GET /api/auth/test)</h5>
+      <h5 class="mb-0">🔐 Текущий JWT токен</h5>
     </div>
     <div class="card-body">
-      <p>Проверяет, что REST API работает.</p>
-      <button id="btnTestGet" class="btn btn-primary" onclick="testGet()">
-        Выполнить GET запрос
-      </button>
-      <div class="mt-2">
-        <strong>Статус:</strong> <span id="getStatus">Не выполнен</span>
+      <div id="tokenInfo">
+        <p>Токен не получен. Выполните вход.</p>
       </div>
-      <pre id="getResult">Результат появится здесь...</pre>
+      <div id="tokenDisplay" class="token-display mt-2" style="display: none;">
+        <strong>Токен:</strong> <span id="tokenValue"></span>
+      </div>
+      <button onclick="clearToken()" class="btn btn-warning btn-sm mt-2">
+        Очистить токен
+      </button>
+      <div class="mt-3">
+        <strong>Тестовые пользователи:</strong>
+        <ul class="mb-0">
+          <li><code>admin@test.ru</code> / <code>admin123</code> (ADMIN)</li>
+          <li><code>barber@test.ru</code> / <code>barber123</code> (BARBER)</li>
+          <li><code>client@test.ru</code> / <code>client123</code> (CLIENT)</li>
+        </ul>
+      </div>
     </div>
   </div>
 
-  <!-- Тест 2: POST /api/auth/login -->
+  <!-- Тест 1: Аутентификация -->
   <div class="card">
     <div class="card-header">
-      <h5 class="mb-0">2. Авторизация (POST /api/auth/login)</h5>
+      <h5 class="mb-0">1. Аутентификация (POST /api/auth/login)</h5>
     </div>
     <div class="card-body">
-      <p>Отправляет email и пароль, получает JWT токен.</p>
-
       <div class="row mb-3">
         <div class="col-md-6">
           <label class="form-label">Email:</label>
-          <input type="email" id="email" class="form-control" value="test@mail.ru">
+          <input type="email" id="email" class="form-control" value="client@test.ru">
         </div>
         <div class="col-md-6">
           <label class="form-label">Пароль:</label>
-          <input type="password" id="password" class="form-control" value="123">
+          <input type="password" id="password" class="form-control" value="client123">
         </div>
       </div>
 
-      <button id="btnTestPost" class="btn btn-primary" onclick="testPost()">
-        Выполнить POST запрос (логин)
-      </button>
+      <button onclick="testLogin()" class="btn btn-primary">Войти (получить JWT токен)</button>
+      <button onclick="testRegister()" class="btn btn-secondary ms-2">Регистрация</button>
       <div class="mt-2">
-        <strong>Статус:</strong> <span id="postStatus">Не выполнен</span>
+        <strong>Статус:</strong> <span id="loginStatus">Не выполнен</span>
       </div>
-      <pre id="postResult">Результат появится здесь...</pre>
+      <pre id="loginResult">Результат появится здесь...</pre>
     </div>
   </div>
 
-  <!-- Тест 3: GET /api/services -->
+  <!-- Тест 2: Получение услуг -->
   <div class="card">
     <div class="card-header">
-      <h5 class="mb-0">3. Получение услуг (GET /api/services)</h5>
+      <h5 class="mb-0">2. Услуги (GET /api/services)</h5>
     </div>
     <div class="card-body">
-      <p>Получает список всех услуг парикмахерской.</p>
-      <button id="btnTestServices" class="btn btn-primary" onclick="testServices()">
+      <p>Получает список всех услуг (требует JWT токен).</p>
+      <button onclick="testServices()" class="btn btn-primary">
         Получить список услуг
       </button>
       <div class="mt-2">
@@ -87,13 +102,13 @@
     </div>
   </div>
 
-  <!-- Тест 4: Работа с записями -->
-  <div class="card mt-3">
+  <!-- Тест 3: Работа с записями -->
+  <div class="card">
     <div class="card-header">
-      <h5 class="mb-0">4. Записи на прием (GET /api/appointments)</h5>
+      <h5 class="mb-0">3. Записи на прием (GET /api/appointments)</h5>
     </div>
     <div class="card-body">
-      <p>Получает список всех записей.</p>
+      <p>Получает список всех записей (требует JWT токен).</p>
       <button onclick="testAppointments()" class="btn btn-primary">
         Получить записи
       </button>
@@ -104,55 +119,100 @@
     </div>
   </div>
 
-  <div class="mt-4 text-center">
-    <a href="/" class="btn btn-outline-secondary">На главную</a>
-    <button class="btn btn-info" onclick="testAll()">Протестировать всё</button>
+  <!-- Тест 4: Тестовый endpoint -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">4. Тест API (GET /api/auth/test)</h5>
+    </div>
+    <div class="card-body">
+      <p>Проверяет, что REST API работает (не требует токена).</p>
+      <button onclick="testApi()" class="btn btn-primary">
+        Проверить API
+      </button>
+      <div class="mt-2">
+        <strong>Статус:</strong> <span id="apiStatus">Не выполнен</span>
+      </div>
+      <pre id="apiResult">Результат появится здесь...</pre>
+    </div>
+  </div>
+
+  <div class="mt-4 mb-4 text-center">
+    <button onclick="testAll()" class="btn btn-info">Протестировать всё</button>
+    <a href="/" class="btn btn-outline-secondary ms-2">На главную</a>
   </div>
 </div>
 
-
-
 <script>
-  // Функция для обновления статуса
-  function updateStatus(elementId, message, isSuccess) {
-    const element = document.getElementById(elementId);
-    element.textContent = message;
-    element.className = isSuccess ? 'success' : 'error';
-  }
+  // Глобальные переменные
+  let jwtToken = localStorage.getItem('jwt_token');
 
-  // 1. Тест GET /api/auth/test
-  async function testGet() {
-    const btn = document.getElementById('btnTestGet');
-    const originalText = btn.textContent;
-    btn.textContent = 'Выполняется...';
-    btn.disabled = true;
+  // Инициализация при загрузке
+  document.addEventListener('DOMContentLoaded', function() {
+    updateTokenDisplay();
+    testApi(); // Автоматически тестируем API
+  });
 
-    try {
-      const response = await fetch('/api/auth/test');
-      const text = await response.text();
+  // Обновление отображения токена
+  function updateTokenDisplay() {
+    const tokenInfo = document.getElementById('tokenInfo');
+    const tokenDisplay = document.getElementById('tokenDisplay');
+    const tokenValue = document.getElementById('tokenValue');
 
-      document.getElementById('getResult').textContent = text;
-      updateStatus('getStatus', `✅ Успешно (${response.status})`, true);
-    } catch (error) {
-      document.getElementById('getResult').textContent = 'Ошибка: ' + error;
-      updateStatus('getStatus', '❌ Ошибка', false);
-    } finally {
-      btn.textContent = originalText;
-      btn.disabled = false;
+    if (jwtToken) {
+      tokenInfo.innerHTML = '<p class="success">✅ Токен получен</p>';
+      tokenDisplay.style.display = 'block';
+      // Показываем только начало и конец токена для безопасности
+      const shortToken = jwtToken.length > 50
+              ? jwtToken.substring(0, 30) + '...' + jwtToken.substring(jwtToken.length - 20)
+              : jwtToken;
+      tokenValue.textContent = shortToken;
+    } else {
+      tokenInfo.innerHTML = '<p class="error">❌ Токен не получен. Выполните вход.</p>';
+      tokenDisplay.style.display = 'none';
     }
   }
 
-  // 2. Тест POST /api/auth/login
-  async function testPost() {
-    const btn = document.getElementById('btnTestPost');
-    const originalText = btn.textContent;
-    btn.textContent = 'Выполняется...';
-    btn.disabled = true;
+  // Очистка токена
+  function clearToken() {
+    jwtToken = null;
+    localStorage.removeItem('jwt_token');
+    updateTokenDisplay();
+    alert('Токен очищен');
+  }
 
-    const data = {
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value
+  // Функция для запросов с токеном
+  async function fetchWithToken(url, options = {}) {
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     };
+
+    if (jwtToken) {
+      defaultOptions.headers['Authorization'] = `Bearer ${jwtToken}`;
+    }
+
+    const mergedOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers
+      }
+    };
+
+    return await fetch(url, mergedOptions);
+  }
+
+  // 1. Тест аутентификации (логин)
+  async function testLogin() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const btn = document.querySelector('[onclick="testLogin()"]');
+    const originalText = btn.textContent;
+
+    btn.textContent = 'Вход...';
+    btn.disabled = true;
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -160,67 +220,159 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ email, password })
       });
 
       const result = await response.json();
-      document.getElementById('postResult').textContent =
-              JSON.stringify(result, null, 2);
-      updateStatus('postStatus', `✅ Успешно (${response.status})`, true);
+
+      if (response.ok && result.token) {
+        jwtToken = result.token;
+        localStorage.setItem('jwt_token', jwtToken);
+
+        document.getElementById('loginResult').textContent =
+                JSON.stringify(result, null, 2);
+        setStatus('loginStatus', `✅ Успешно (${response.status})`, true);
+
+        // Обновляем информацию о токене
+        updateTokenDisplay();
+
+        // Показываем информацию о пользователе
+        alert(`Вход выполнен!\nEmail: ${result.email}\nРоль: ${result.role}`);
+      } else {
+        throw new Error(result.message || 'Ошибка аутентификации');
+      }
     } catch (error) {
-      document.getElementById('postResult').textContent = 'Ошибка: ' + error;
-      updateStatus('postStatus', '❌ Ошибка', false);
+      document.getElementById('loginResult').textContent = 'Ошибка: ' + error.message;
+      setStatus('loginStatus', '❌ Ошибка', false);
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
     }
   }
 
-  // 3. Тест GET /api/services
+  // Регистрация
+  async function testRegister() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const result = await response.json();
+      document.getElementById('loginResult').textContent =
+              JSON.stringify(result, null, 2);
+      setStatus('loginStatus', `✅ Регистрация (${response.status})`, true);
+
+      if (result.token) {
+        jwtToken = result.token;
+        localStorage.setItem('jwt_token', jwtToken);
+        updateTokenDisplay();
+      }
+    } catch (error) {
+      document.getElementById('loginResult').textContent = 'Ошибка: ' + error;
+      setStatus('loginStatus', '❌ Ошибка', false);
+    }
+  }
+
+  // 2. Тест получения услуг
   async function testServices() {
-    const btn = document.getElementById('btnTestServices');
+    if (!jwtToken) {
+      alert('Сначала выполните вход!');
+      return;
+    }
+
+    const btn = document.querySelector('[onclick="testServices()"]');
     const originalText = btn.textContent;
-    btn.textContent = 'Выполняется...';
+    btn.textContent = 'Загрузка...';
     btn.disabled = true;
 
     try {
-      const response = await fetch('/api/services');
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      const services = await response.json();
+      const response = await fetchWithToken('/api/services');
+      const result = await response.json();
+
       document.getElementById('servicesResult').textContent =
-              JSON.stringify(services, null, 2);
-      updateStatus('servicesStatus', `✅ Успешно (${response.status})`, true);
+              JSON.stringify(result, null, 2);
+      setStatus('servicesStatus', `✅ Успешно (${response.status})`, true);
     } catch (error) {
       document.getElementById('servicesResult').textContent = 'Ошибка: ' + error;
-      updateStatus('servicesStatus', '❌ Ошибка', false);
+      setStatus('servicesStatus', '❌ Ошибка', false);
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
     }
   }
 
+  // 3. Тест получения записей
+  async function testAppointments() {
+    if (!jwtToken) {
+      alert('Сначала выполните вход!');
+      return;
+    }
 
-  // Тест всех endpoints
+    const btn = document.querySelector('[onclick="testAppointments()"]');
+    const originalText = btn.textContent;
+    btn.textContent = 'Загрузка...';
+    btn.disabled = true;
+
+    try {
+      const response = await fetchWithToken('/api/appointments');
+      const result = await response.json();
+
+      document.getElementById('appointmentsResult').textContent =
+              JSON.stringify(result, null, 2);
+      setStatus('appointmentsStatus', `✅ Успешно (${response.status})`, true);
+    } catch (error) {
+      document.getElementById('appointmentsResult').textContent = 'Ошибка: ' + error;
+      setStatus('appointmentsStatus', '❌ Ошибка', false);
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // 4. Тест API (публичный)
+  async function testApi() {
+    const btn = document.querySelector('[onclick="testApi()"]');
+    const originalText = btn.textContent;
+    btn.textContent = 'Проверка...';
+    btn.disabled = true;
+
+    try {
+      const response = await fetch('/api/auth/test');
+      const text = await response.text();
+
+      document.getElementById('apiResult').textContent = text;
+      setStatus('apiStatus', `✅ Успешно (${response.status})`, true);
+    } catch (error) {
+      document.getElementById('apiResult').textContent = 'Ошибка: ' + error;
+      setStatus('apiStatus', '❌ Ошибка', false);
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // Тест всех функций
   async function testAll() {
-    await testGet();
-    await testPost();
+    await testApi();
+    if (!jwtToken) {
+      alert('Для полного теста нужно войти в систему!');
+      return;
+    }
     await testServices();
     await testAppointments();
   }
-  // 4. Тест GET /api/appointments
-  async function testAppointments() {
-    const response = await fetch('/api/appointments');
-    const appointments = await response.json();
-    document.getElementById('appointmentsResult').innerHTML =
-            JSON.stringify(appointments, null, 2);
-    document.getElementById('appointmentsStatus').innerHTML =
-            `✅ Успешно (${response.status})`;
-  }
 
-  // Автоматически запускаем первый тест при загрузке страницы
-  window.onload = testGet;
+  // Вспомогательная функция для установки статуса
+  function setStatus(elementId, message, isSuccess) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.className = isSuccess ? 'success' : 'error';
+  }
 </script>
 </body>
 </html>

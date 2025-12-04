@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Регистрация - Парикмахерская</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .password-hint { font-size: 0.85rem; color: #6c757d; }
+    .form-card { max-width: 500px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card form-card">
+        <div class="card-header">
+          <h4 class="mb-0">Регистрация нового клиента</h4>
+        </div>
+        <div class="card-body">
+          <!-- Сообщения об ошибках/успехе -->
+          <div id="errorMessage" class="alert alert-danger d-none"></div>
+          <div id="successMessage" class="alert alert-success d-none"></div>
+
+          <!-- Форма регистрации -->
+          <form id="registerForm">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="firstName" class="form-label">Имя *</label>
+                <input type="text" class="form-control" id="firstName"
+                       name="firstName" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="lastName" class="form-label">Фамилия</label>
+                <input type="text" class="form-control" id="lastName"
+                       name="lastName">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email *</label>
+              <input type="email" class="form-control" id="email"
+                     name="email" placeholder="example@mail.ru" required>
+              <div class="form-text">Будет использоваться для входа</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="phoneNumber" class="form-label">Телефон</label>
+              <input type="tel" class="form-control" id="phoneNumber"
+                     name="phoneNumber" placeholder="+7 (999) 123-45-67">
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Пароль *</label>
+              <input type="password" class="form-control" id="password"
+                     name="password" required minlength="6">
+              <div class="password-hint">Минимум 6 символов</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="confirmPassword" class="form-label">Подтверждение пароля *</label>
+              <input type="password" class="form-control" id="confirmPassword"
+                     name="confirmPassword" required>
+            </div>
+
+            <div class="alert alert-info">
+              <small>
+                <strong>Внимание:</strong> При регистрации вы получаете роль <strong>Клиент</strong>.<br>
+                Для получения ролей <strong>Парикмахер</strong> или <strong>Администратор</strong>
+                обратитесь к администратору системы.
+              </small>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+              <a href="/login" class="btn btn-outline-secondary">Уже есть аккаунт? Войти</a>
+              <a href="/" class="btn btn-link">На главную</a>
+            </div>
+          </form>
+        </div>
+        <div class="card-footer text-muted">
+          <small>Все поля отмеченные * обязательны для заполнения</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Валидация формы
+  document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // Сброс сообщений
+    document.getElementById('errorMessage').classList.add('d-none');
+    document.getElementById('successMessage').classList.add('d-none');
+
+    // Проверка паролей
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (password !== confirmPassword) {
+      showMessage('errorMessage', 'Пароли не совпадают');
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage('errorMessage', 'Пароль должен быть не менее 6 символов');
+      return;
+    }
+
+    // Сбор данных
+    const userData = {
+      email: document.getElementById('email').value,
+      password: password,
+      firstName: document.getElementById('firstName').value,
+      lastName: document.getElementById('lastName').value,
+      phoneNumber: document.getElementById('phoneNumber').value || null
+    };
+
+    // Отправка на сервер
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showMessage('successMessage',
+                `Регистрация успешна! Добро пожаловать, ${data.firstName || data.email}.
+                    Автоматический вход...`);
+
+        // Автовход после регистрации
+        setTimeout(() => {
+          window.location.href = '/client/dashboard';
+        }, 2000);
+
+      } else {
+        const errorData = await response.json();
+        showMessage('errorMessage',
+                `Ошибка регистрации: ${errorData.message || 'Неизвестная ошибка'}`);
+      }
+
+    } catch (error) {
+      showMessage('errorMessage', 'Ошибка сети: ' + error.message);
+    }
+  });
+
+  // Функция показа сообщений
+  function showMessage(elementId, text, isSuccess = false) {
+    const element = document.getElementById(elementId);
+    element.textContent = text;
+    element.classList.remove('d-none');
+    element.className = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+  }
+
+  // Валидация паролей в реальном времени
+  document.getElementById('confirmPassword').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirm = this.value;
+
+    if (confirm && password !== confirm) {
+      this.classList.add('is-invalid');
+    } else {
+      this.classList.remove('is-invalid');
+    }
+  });
+</script>
+</body>
+</html>

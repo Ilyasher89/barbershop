@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${service.name}">Просмотр услуги</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-light bg-light mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="/">Парикмахерская</a>
+    <a href="/services" class="btn btn-outline-secondary btn-sm">Назад к списку</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0" th:text="${service.name}">Название услуги</h4>
+          <span class="badge bg-primary fs-6" th:text="${service.basePrice} + ' ₽'">Цена</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-4">
+            <h6>Описание:</h6>
+            <p class="card-text" th:text="${service.description} ?: 'Описание отсутствует'">
+              Описание услуги
+            </p>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h6 class="card-title">⏱️ Длительность</h6>
+                  <p class="display-6" th:text="${service.baseDurationMinutes} + ' мин.'">45 мин.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h6 class="card-title">💰 Цена</h6>
+                  <p class="display-6" th:text="${service.basePrice} + ' ₽'">1500 ₽</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-info">
+            <small>
+              <i class="bi bi-info-circle"></i>
+              Для записи на эту услугу выберите мастера и удобное время.
+            </small>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex justify-content-between">
+            <small class="text-muted">ID: <code th:text="${service.id}"></code></small>
+            <div>
+              <a th:href="@{'/services/' + ${service.id} + '/edit'}"
+                 class="btn btn-warning btn-sm"
+                 th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+                Редактировать
+              </a>
+              <a href="/services" class="btn btn-outline-secondary btn-sm">Вернуться к списку</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Блок "Мастера, оказывающие эту услугу" (будет позже) -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0">👨‍✂️ Мастера, оказывающие эту услугу</h6>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-0">
+            <small>Список мастеров будет доступен после реализации связи услуг и мастеров.</small>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+</body>
+</html>

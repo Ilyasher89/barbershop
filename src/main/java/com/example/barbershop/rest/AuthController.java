@@ -2,72 +2,97 @@ package com.example.barbershop.rest;
 
 import com.example.barbershop.dto.LoginRequest;
 import com.example.barbershop.dto.AuthResponse;
+import com.example.barbershop.security.CustomUserDetailsService;
+import com.example.barbershop.security.JwtUtils;
+import com.example.barbershop.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import com.example.barbershop.dto.RegisterRequest;
 
-/**
- * REST контроллер для аутентификации и регистрации.
- * Обрабатывает запросы по пути /api/auth
- *
- * @RestController - указывает, что этот класс обрабатывает REST запросы
- * @RequestMapping("/api/auth") - все методы будут доступны по пути /api/auth
- */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final AuthenticationManager authenticationManager;
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtUtils jwtUtils;
+    private final UserService userService;
+
     /**
-     * Обрабатывает POST запрос для входа в систему.
-     *
-     * @param loginRequest данные для входа (email и пароль) в формате JSON
-     * @return ResponseEntity<AuthResponse> - ответ с токеном и информацией о пользователе
-     *
-     * @PostMapping("/login") - метод обрабатывает POST запросы на /api/auth/login
-     * @RequestBody - параметр берется из тела HTTP-запроса (JSON)
+     * Вход в систему с получением JWT токена.
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
-        // TODO: В будущем здесь будет реальная проверка логина/пароля
-        // и генерация JWT токена
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        // 1. Аутентифицируем пользователя
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
 
-        System.out.println("Получен запрос на вход: email=" + loginRequest.getEmail());
+        // 2. Загружаем UserDetails
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
 
-        // Создаем заглушку ответа
+        // 3. Генерируем JWT токен
+        final String token = jwtUtils.generateToken(userDetails);
+
+        // 4. Получаем полную информацию о пользователе из БД
+        var user = userService.findByEmail(request.getEmail()).orElseThrow();
+
+        // 5. Формируем ответ
         AuthResponse response = new AuthResponse();
-        response.setEmail(loginRequest.getEmail());
-        response.setRole("CLIENT"); // Временная заглушка
-        response.setFirstName("Тестовый");
-        response.setLastName("Пользователь");
-        response.setToken("dummy-jwt-token-" + System.currentTimeMillis());
+        response.setToken(token);
+        response.setEmail(user.getEmail());
+        response.setRole(user.getRole().name());
+        response.setFirstName(user.getFirstName());
+        response.setLastName(user.getLastName());
 
-        // Возвращаем ответ с HTTP статусом 200 (OK)
         return ResponseEntity.ok(response);
     }
 
     /**
-     * Обрабатывает POST запрос для регистрации нового пользователя.
-     *
-     * @param loginRequest данные для регистрации
-     * @return ResponseEntity с сообщением об успехе
+     * Регистрация нового пользователя.
      */
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody LoginRequest loginRequest) {
-        // TODO: В будущем здесь будет реальная регистрация
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+        // 1. Создаем нового пользователя
+        var newUser = new com.example.barbershop.entity.User();
+        newUser.setEmail(request.getEmail());
+        newUser.setPassword(request.getPassword()); // Пароль захешируется в сервисе
+        newUser.setFirstName(request.getFirstName());
+        newUser.setLastName(request.getLastName());
+        newUser.setPhoneNumber(request.getPhoneNumber());
+        newUser.setRole(com.example.barbershop.entity.User.Role.CLIENT); // По умолчанию клиент
 
-        System.out.println("Получен запрос на регистрацию: email=" + loginRequest.getEmail());
+        // 2. Сохраняем через UserService (там хеширование пароля)
+        var savedUser = userService.registerUser(newUser);
 
-        // Временная заглушка
-        return ResponseEntity.ok("Регистрация успешна (заглушка) для: " + loginRequest.getEmail());
+        // 3. Генерируем токен для автоматического входа
+        UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getEmail());
+        final String token = jwtUtils.generateToken(userDetails);
+
+        // 4. Формируем ответ
+        AuthResponse response = new AuthResponse();
+        response.setToken(token);
+        response.setEmail(savedUser.getEmail());
+        response.setRole(savedUser.getRole().name());
+        response.setFirstName(savedUser.getFirstName());
+        response.setLastName(savedUser.getLastName());
+
+        return ResponseEntity.ok(response);
     }
 
     /**
-     * Тестовый GET endpoint для проверки работы API.
-     * Доступен по GET /api/auth/test
+     * Тестовый endpoint (оставляем для обратной совместимости).
      */
     @GetMapping("/test")
     public ResponseEntity<String> test() {
-        return ResponseEntity.ok("Auth API работает! Время: " + new java.util.Date());
+        return ResponseEntity.ok("Auth API работает с JWT! Время: " + new java.util.Date());
     }
 }

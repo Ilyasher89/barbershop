@@ -2,7 +2,9 @@ package com.example.barbershop.rest;
 
 import com.example.barbershop.dto.AppointmentDto;
 import com.example.barbershop.entity.Appointment;
+import com.example.barbershop.entity.User;
 import com.example.barbershop.service.AppointmentService;
+import com.example.barbershop.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,7 @@ import java.util.List;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final UserService userService;
 
     /**
      * Получить все записи (только для администраторов).
@@ -49,13 +52,22 @@ public class AppointmentController {
     @PostMapping
     public ResponseEntity<?> createAppointment(@RequestBody AppointmentDto appointmentDto) {
         try {
-            // TODO: Реализовать создание записи через appointmentService
-            // appointmentService.createAppointment(...);
+            // Находим клиента по ID из DTO
+            User client = userService.findById(appointmentDto.getClientId())
+                    .orElseThrow(() -> new IllegalArgumentException("Клиент не найден"));
 
-            System.out.println("Создание записи: " + appointmentDto);
-            return ResponseEntity.ok("Запись создана (заглушка)");
-        } catch (Exception e) {
+            // Создаем запись через сервис
+            Appointment appointment = appointmentService.createAppointment(
+                    client,
+                    appointmentDto.getBarberServiceId(),
+                    appointmentDto.getAppointmentDateTime()
+            );
+
+            return ResponseEntity.ok(appointment);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Ошибка создания записи: " + e.getMessage());
         }
     }
 

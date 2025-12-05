@@ -105,13 +105,34 @@
   <!-- Тест 3: Работа с записями -->
   <div class="card">
     <div class="card-header">
-      <h5 class="mb-0">3. Записи на прием (GET /api/appointments)</h5>
+      <h5 class="mb-0">3. Записи на прием</h5>
     </div>
     <div class="card-body">
-      <p>Получает список всех записей (требует JWT токен).</p>
-      <button onclick="testAppointments()" class="btn btn-primary">
-        Получить записи
-      </button>
+      <!-- 3.1 Получить все записи -->
+      <div class="mb-3">
+        <button onclick="testGetAppointments()" class="btn btn-outline-primary">
+          GET /api/appointments
+        </button>
+        <small class="text-muted ms-2">Получить все записи</small>
+      </div>
+
+      <!-- 3.2 Создать новую запись -->
+      <div class="mb-3">
+        <button onclick="testCreateAppointment()" class="btn btn-outline-success">
+          POST /api/appointments
+        </button>
+        <small class="text-muted ms-2">Создать запись (нужен JWT)</small>
+      </div>
+
+      <!-- 3.3 Тестовые данные для создания -->
+      <div class="alert alert-info">
+        <strong>Тестовые данные для создания записи:</strong><br>
+        • clientId: 3 (клиент)<br>
+        • barberServiceId: 1<br>
+        • appointmentDateTime: 2024-01-20T10:00:00<br>
+        • status: SCHEDULED
+      </div>
+
       <div class="mt-2">
         <strong>Статус:</strong> <span id="appointmentsStatus">Не выполнен</span>
       </div>
@@ -144,7 +165,7 @@
 
 <script>
   // Глобальные переменные
-  let jwtToken = localStorage.getItem('jwt_token');
+  let jwtToken = localStorage.getItem('jwt_token') || localStorage.getItem('token');
 
   // Инициализация при загрузке
   document.addEventListener('DOMContentLoaded', function() {
@@ -176,6 +197,7 @@
   function clearToken() {
     jwtToken = null;
     localStorage.removeItem('jwt_token');
+    localStorage.removeItem('token');
     updateTokenDisplay();
     alert('Токен очищен');
   }
@@ -228,6 +250,7 @@
       if (response.ok && result.token) {
         jwtToken = result.token;
         localStorage.setItem('jwt_token', jwtToken);
+        localStorage.setItem('token', jwtToken); // Дублируем для совместимости
 
         document.getElementById('loginResult').textContent =
                 JSON.stringify(result, null, 2);
@@ -270,6 +293,7 @@
       if (result.token) {
         jwtToken = result.token;
         localStorage.setItem('jwt_token', jwtToken);
+        localStorage.setItem('token', jwtToken);
         updateTokenDisplay();
       }
     } catch (error) {
@@ -306,14 +330,14 @@
     }
   }
 
-  // 3. Тест получения записей
-  async function testAppointments() {
+  // 3.1 Тест получения всех записей
+  async function testGetAppointments() {
     if (!jwtToken) {
       alert('Сначала выполните вход!');
       return;
     }
 
-    const btn = document.querySelector('[onclick="testAppointments()"]');
+    const btn = document.querySelector('[onclick="testGetAppointments()"]');
     const originalText = btn.textContent;
     btn.textContent = 'Загрузка...';
     btn.disabled = true;
@@ -331,6 +355,36 @@
     } finally {
       btn.textContent = originalText;
       btn.disabled = false;
+    }
+  }
+
+  // 3.2 Тест создания записи
+  async function testCreateAppointment() {
+    if (!jwtToken) {
+      alert('Сначала войдите в систему!');
+      return;
+    }
+
+    const appointmentData = {
+      clientId: 3, // ID клиента (client@test.ru)
+      barberServiceId: 1,
+      appointmentDateTime: "2024-01-20T10:00:00"
+    };
+
+    try {
+      const response = await fetchWithToken('/api/appointments', {
+        method: 'POST',
+        body: JSON.stringify(appointmentData)
+      });
+
+      const result = await response.json();
+
+      document.getElementById('appointmentsResult').textContent =
+              'Создана запись:\n' + JSON.stringify(result, null, 2);
+      setStatus('appointmentsStatus', `✅ Успешно (${response.status})`, true);
+    } catch (error) {
+      document.getElementById('appointmentsResult').textContent = 'Ошибка: ' + error;
+      setStatus('appointmentsStatus', '❌ Ошибка', false);
     }
   }
 
@@ -364,7 +418,7 @@
       return;
     }
     await testServices();
-    await testAppointments();
+    await testGetAppointments();
   }
 
   // Вспомогательная функция для установки статуса

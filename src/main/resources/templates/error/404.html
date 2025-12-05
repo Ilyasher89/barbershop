@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>404 - Страница не найдена | Парикмахерская</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .error-container {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <!-- Навигация (как на главной) -->
+    <div class="mb-4">
+        <h1>Парикмахерская</h1>
+        <nav>
+            <a href="/" class="btn btn-outline-primary btn-sm">Главная</a>
+            <a href="/services" class="btn btn-outline-secondary btn-sm">Услуги</a>
+            <a href="/about" class="btn btn-outline-secondary btn-sm">О проекте</a>
+        </nav>
+    </div>
+
+    <!-- Контент ошибки -->
+    <div class="error-container">
+        <div class="text-center">
+            <div class="error-code">404</div>
+            <h2 class="mt-3">Страница не найдена</h2>
+            <p class="lead">Извините, запрашиваемая страница не существует или была перемещена.</p>
+
+            <div class="mt-4">
+                <a href="/" class="btn btn-primary">На главную</a>
+                <a href="/services" class="btn btn-outline-primary ms-2">Перейти к услугам</a>
+                <button onclick="history.back()" class="btn btn-outline-secondary ms-2">Вернуться назад</button>
+            </div>
+
+            <!-- Информация для разработки -->
+            <div th:if="${timestamp}" class="mt-4 text-muted small">
+                <p>Ошибка: <span th:text="${error}">Not Found</span></p>
+                <p>Путь: <code th:text="${path}"></code></p>
+                <p>Время: <span th:text="${timestamp}"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Футер (можно вынести в отдельный файл позже) -->
+    <footer class="mt-5 pt-4 border-top">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Парикмахерская</h5>
+                <p>Информационная система для управления услугами парикмахерской</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <p><a href="/about">Об авторе проекта</a></p>
+                <p class="text-muted small">© 2024 Курсовая работа по дисциплине "Современные технологии программирования"</p>
+            </div>
+        </div>
+    </footer>
+</div>
+</body>
+</html>

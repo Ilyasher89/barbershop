@@ -1,5 +1,6 @@
 package com.example.barbershop.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
         uniqueConstraints = @UniqueConstraint(columnNames = {"barber_id", "service_id"}))
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class BarberService {
 
     @Id
@@ -33,7 +35,7 @@ public class BarberService {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id", nullable = false)
-    private Service service;
+    private ServiceItem service;
 
     /**
      * Фактическая цена на эту услугу у данного мастера.
@@ -50,7 +52,7 @@ public class BarberService {
     private Integer actualDurationMinutes;
 
     // Конструктор для удобного создания
-    public BarberService(Barber barber, Service service, Double actualPrice, Integer actualDurationMinutes) {
+    public BarberService(Barber barber, ServiceItem service, Double actualPrice, Integer actualDurationMinutes) {
         this.barber = barber;
         this.service = service;
         this.actualPrice = actualPrice;

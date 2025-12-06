@@ -124,6 +124,13 @@
         <small class="text-muted ms-2">Создать запись (нужен JWT)</small>
       </div>
 
+      <div class="mb-3">
+        <button onclick="testGetBarberServices()" class="btn btn-outline-info">
+          GET /api/barber-services
+        </button>
+        <small class="text-muted ms-2">Получить все услуги мастеров</small>
+      </div>
+
       <!-- 3.3 Тестовые данные для создания -->
       <div class="alert alert-info">
         <strong>Тестовые данные для создания записи:</strong><br>
@@ -381,6 +388,26 @@
 
       document.getElementById('appointmentsResult').textContent =
               'Создана запись:\n' + JSON.stringify(result, null, 2);
+      setStatus('appointmentsStatus', `✅ Успешно (${response.status})`, true);
+    } catch (error) {
+      document.getElementById('appointmentsResult').textContent = 'Ошибка: ' + error;
+      setStatus('appointmentsStatus', '❌ Ошибка', false);
+    }
+  }
+
+  // 3.3 Тест получения услуг мастеров
+  async function testGetBarberServices() {
+    if (!jwtToken) {
+      alert('Сначала войдите в систему!');
+      return;
+    }
+
+    try {
+      const response = await fetchWithToken('/api/barber-services');
+      const result = await response.json();
+
+      document.getElementById('appointmentsResult').textContent =
+              'Услуги мастеров:\n' + JSON.stringify(result, null, 2);
       setStatus('appointmentsStatus', `✅ Успешно (${response.status})`, true);
     } catch (error) {
       document.getElementById('appointmentsResult').textContent = 'Ошибка: ' + error;

@@ -1,6 +1,6 @@
 package com.example.barbershop.service;
 
-import com.example.barbershop.entity.Service;
+import com.example.barbershop.entity.ServiceItem;
 import com.example.barbershop.repository.ServiceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,19 +17,19 @@ public class ServiceCatalogService {
 
     private final ServiceRepository serviceRepository;
 
-    public List<Service> getAllServices() {
+    public List<ServiceItem> getAllServices() {
         return serviceRepository.findAll();
     }
 
-    public Service getServiceById(Long id) {
+    public ServiceItem getServiceById(Long id) {
         return serviceRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Услуга не найдена"));
     }
 
     @Transactional
-    public Service createService(String name, String description,
-                                 Integer baseDurationMinutes, Double basePrice) {
-        Service service = new Service();
+    public ServiceItem createService(String name, String description,
+                                     Integer baseDurationMinutes, Double basePrice) {
+        ServiceItem service = new ServiceItem();
         service.setName(name);
         service.setDescription(description);
         service.setBaseDurationMinutes(baseDurationMinutes);
@@ -39,8 +39,8 @@ public class ServiceCatalogService {
     }
 
     @Transactional
-    public Service updateService(Long id, Service updatedService) {
-        Service service = getServiceById(id);
+    public ServiceItem updateService(Long id, ServiceItem updatedService) {
+        ServiceItem service = getServiceById(id);
 
         if (updatedService.getName() != null) {
             service.setName(updatedService.getName());

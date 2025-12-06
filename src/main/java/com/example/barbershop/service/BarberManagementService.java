@@ -1,7 +1,7 @@
 package com.example.barbershop.service;
 
 import com.example.barbershop.entity.Barber;
-import com.example.barbershop.entity.Service;
+import com.example.barbershop.entity.ServiceItem;
 import com.example.barbershop.entity.BarberService;
 import com.example.barbershop.entity.User;
 import com.example.barbershop.repository.BarberRepository;
@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Сервис для управления парикмахерами и их услугами.
@@ -74,7 +73,7 @@ public class BarberManagementService {
     public BarberService addServiceToBarber(Long barberId, Long serviceId,
                                             Double actualPrice, Integer actualDurationMinutes) {
         Barber barber = getBarberById(barberId);
-        Service service = serviceRepository.findById(serviceId)
+        ServiceItem service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new IllegalArgumentException("Услуга не найдена"));
 
         // Проверяем, не добавлена ли уже эта услуга

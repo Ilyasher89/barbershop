@@ -1,84 +1,149 @@
 package com.example.barbershop.controller;
 
+import com.example.barbershop.dto.AppointmentRequest;
+import com.example.barbershop.dto.AppointmentResponseDto;
+import com.example.barbershop.entity.Appointment;
+import com.example.barbershop.entity.Barber;
 import com.example.barbershop.entity.User;
-import com.example.barbershop.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.example.barbershop.repository.BarberRepository;
+import com.example.barbershop.security.CustomUserDetails;
+import com.example.barbershop.service.AppointmentService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/client")
+@RequiredArgsConstructor
+@Slf4j
 public class ClientController {
 
-    private final UserService userService;
+    private final AppointmentService appointmentService;
+    private final BarberRepository barberRepository;
 
-    @Autowired
-    public ClientController(UserService userService) {
-        this.userService = userService;
-    }
-
-    /**
-     * Личный кабинет клиента
-     */
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
-        // Способ 1: Получаем аутентификацию из SecurityContext
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
+    public String clientDashboard(Model model,
+                                  @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            log.warn("Unauthorized access to /client/dashboard");
             return "redirect:/login";
         }
 
-        // Получаем email из аутентификации
-        String email = authentication.getName();
-        System.out.println("DEBUG: User email from authentication: " + email);
+        User user = userDetails.getUser();
+        log.info("Client dashboard accessed by user: {} (ID: {})", user.getEmail(), user.getId());
 
-        // Находим пользователя в базе
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + email));
-
-        System.out.println("DEBUG: Found user: " + user.getEmail());
-        System.out.println("DEBUG: User firstName: " + user.getFirstName());
-
-        // Добавляем данные пользователя в модель
-        model.addAttribute("user", user);
         model.addAttribute("pageTitle", "Личный кабинет клиента");
-
+        model.addAttribute("user", user);
         return "client/dashboard";
     }
 
-    /**
-     * Профиль клиента (редактирование данных)
-     */
-    @GetMapping("/profile")
-    public String profile(Model model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    @GetMapping("/appointments")
+    public String clientAppointments(Model model,
+                                     @AuthenticationPrincipal CustomUserDetails userDetails) {
 
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
+
+        User user = userDetails.getUser();
+        System.out.println("DEBUG: User ID = " + user.getId());
+
+        // Получаем записи
+        List<Appointment> appointments = appointmentService.getClientAppointments(user.getId());
+        System.out.println("DEBUG: Found " + appointments.size() + " appointments");
+
+        // Конвертируем в DTO
+        List<AppointmentResponseDto> appointmentDtos = new ArrayList<>();
+        for (Appointment appointment : appointments) {
+            appointmentDtos.add(appointmentService.convertToDto(appointment));
+        }
+
+        model.addAttribute("appointments", appointmentDtos);
         model.addAttribute("user", user);
+
+        return "client/appointments";
+    }
+
+    @GetMapping("/profile")
+    public String clientProfile(Model model,
+                                @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            log.warn("Unauthorized access to /client/profile");
+            return "redirect:/login";
+        }
+
+        User user = userDetails.getUser();
+        log.info("Client profile accessed by user: {} (ID: {})", user.getEmail(), user.getId());
+
         model.addAttribute("pageTitle", "Мой профиль");
+        model.addAttribute("user", user);
         return "client/profile";
+    }
+    @GetMapping("/appointments/new")
+    public String newAppointmentForm(Model model,
+                                     @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) return "redirect:/login";
+
+        // Получаем всех мастеров для выпадающего списка
+        List<Barber> barbers = barberRepository.findAll();
+
+        model.addAttribute("barbers", barbers);
+        model.addAttribute("user", userDetails.getUser());
+
+        // Пустой объект для формы
+        model.addAttribute("appointmentRequest", new AppointmentRequest());
+
+        return "client/new-appointment";
+    }
+
+    @PostMapping("/appointments/new")
+    public String createAppointment(@ModelAttribute AppointmentRequest request,
+                                    @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) return "redirect:/login";
+
+        try {
+            // Создаем запись через сервис
+            appointmentService.createAppointment(
+                    userDetails.getUser(),
+                    request.getBarberServiceId(),
+                    request.getAppointmentDateTime()
+            );
+
+            return "redirect:/client/appointments?success=true";
+        } catch (Exception e) {
+            return "redirect:/client/appointments/new?error=" + e.getMessage();
+        }
     }
 
     /**
-     * История записей клиента
+     * Для отладки: проверка передачи данных
      */
-    @GetMapping("/appointments")
-    public String appointments(Model model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    @GetMapping("/debug")
+    public String debugPage(Model model,
+                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return "redirect:/login";
+        }
 
+        User user = userDetails.getUser();
+
+        // Тестовые данные
+        model.addAttribute("testString", "Hello from Thymeleaf!");
+        model.addAttribute("testNumber", 12345);
+        model.addAttribute("testUserId", user.getId());
         model.addAttribute("user", user);
-        model.addAttribute("pageTitle", "Мои записи");
 
-        return "client/appointments";
+        return "client/debug";
     }
 }

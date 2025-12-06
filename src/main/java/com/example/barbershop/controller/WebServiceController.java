@@ -1,6 +1,6 @@
 package com.example.barbershop.controller;
 
-import com.example.barbershop.entity.Service;
+import com.example.barbershop.entity.ServiceItem;
 import com.example.barbershop.service.ServiceCatalogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +26,7 @@ public class WebServiceController {
      */
     @GetMapping
     public String listServices(Model model) {
-        List<Service> services = serviceCatalogService.getAllServices();
+        List<ServiceItem> services = serviceCatalogService.getAllServices();
         model.addAttribute("services", services);
         model.addAttribute("totalServices", services.size());
         return "services/list";
@@ -39,7 +39,7 @@ public class WebServiceController {
     @GetMapping("/new")
     @PreAuthorize("hasRole('ADMIN')")
     public String showCreateForm(Model model) {
-        model.addAttribute("service", new Service());
+        model.addAttribute("service", new ServiceItem());
         model.addAttribute("isEdit", false);
         return "services/form";
     }
@@ -65,7 +65,7 @@ public class WebServiceController {
     @GetMapping("/{id}/edit")
     @PreAuthorize("hasRole('ADMIN')")
     public String showEditForm(@PathVariable Long id, Model model) {
-        Service service = serviceCatalogService.getServiceById(id);
+        ServiceItem service = serviceCatalogService.getServiceById(id);
         model.addAttribute("service", service);
         model.addAttribute("isEdit", true);
         return "services/form";
@@ -83,7 +83,7 @@ public class WebServiceController {
             @RequestParam Integer baseDurationMinutes,
             @RequestParam Double basePrice) {
 
-        Service updatedService = new Service();
+        ServiceItem updatedService = new ServiceItem();
         updatedService.setName(name);
         updatedService.setDescription(description);
         updatedService.setBaseDurationMinutes(baseDurationMinutes);
@@ -108,7 +108,7 @@ public class WebServiceController {
      */
     @GetMapping("/{id}")
     public String viewService(@PathVariable Long id, Model model) {
-        Service service = serviceCatalogService.getServiceById(id);
+        ServiceItem service = serviceCatalogService.getServiceById(id);
         model.addAttribute("service", service);
         return "services/view";
     }

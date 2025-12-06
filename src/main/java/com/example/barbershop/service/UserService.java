@@ -70,6 +70,8 @@ public class UserService {
     public void createTestUsers() {
         // Только если нет пользователей в БД
         if (userRepository.count() == 0) {
+            System.out.println("=== СОЗДАНИЕ ТЕСТОВЫХ ПОЛЬЗОВАТЕЛЕЙ ===");
+
             User admin = new User();
             admin.setEmail("admin@test.ru");
             admin.setPassword(passwordEncoder.encode("admin123"));
@@ -77,6 +79,7 @@ public class UserService {
             admin.setFirstName("Админ");
             admin.setLastName("Админов");
             userRepository.save(admin);
+            System.out.println("Создан ADMIN: " + admin.getEmail());
 
             User barber = new User();
             barber.setEmail("barber@test.ru");
@@ -85,6 +88,7 @@ public class UserService {
             barber.setFirstName("Иван");
             barber.setLastName("Парикмахеров");
             userRepository.save(barber);
+            System.out.println("Создан BARBER: " + barber.getEmail());
 
             User client = new User();
             client.setEmail("client@test.ru");
@@ -93,8 +97,9 @@ public class UserService {
             client.setFirstName("Петр");
             client.setLastName("Клиентов");
             userRepository.save(client);
+            System.out.println("Создан CLIENT: " + client.getEmail());
 
-            System.out.println("Созданы тестовые пользователи");
+            System.out.println("=== ТЕСТОВЫЕ ПОЛЬЗОВАТЕЛИ СОЗДАНЫ ===");
         }
     }
 

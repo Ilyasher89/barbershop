@@ -1,10 +1,12 @@
 package com.example.barbershop.config;
 
+import com.example.barbershop.security.CustomUserDetailsService; // ← Добавить импорт
 import com.example.barbershop.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,74 +22,76 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService userDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // ========== НАСТРОЙКА АУТЕНТИФИКАЦИИ ==========
+                .authenticationProvider(authenticationProvider()) // ← Добавить эту строку
+
                 // ========== НАСТРОЙКА ДОСТУПА ==========
                 .authorizeHttpRequests(auth -> auth
-                        // ----- ПУБЛИЧНЫЕ СТРАНИЦЫ (без авторизации) -----
                         .requestMatchers("/", "/home", "/login", "/register", "/about",
-                                "/api-test", "/services").permitAll()
+                                "/api-test", "/services", "/api-test.html").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
-
-                        // ----- API АУТЕНТИФИКАЦИИ (публичное) -----
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // ----- ВЕБ-СТРАНИЦЫ С ПРОВЕРКОЙ РОЛЕЙ -----
-                        .requestMatchers("/client/**").hasRole("CLIENT")      // Только CLIENT
-                        .requestMatchers("/barber/**").hasRole("BARBER")      // Только BARBER
-                        .requestMatchers("/admin/**").hasRole("ADMIN")        // Только ADMIN
-
-                        // ----- API (требует аутентификации) -----
+                        .requestMatchers("/client/**").hasRole("CLIENT")
+                        .requestMatchers("/barber/**").hasRole("BARBER")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
-
-                        // ----- ВСЕ ОСТАЛЬНОЕ -----
-                        .anyRequest().authenticated()  // Все остальные страницы требуют входа
+                        .anyRequest().authenticated()
                 )
 
-                // ========== ФОРМА ЛОГИНА (для веб-интерфейса) ==========
+                // ========== ФОРМА ЛОГИНА ==========
                 .formLogin(form -> form
-                        .loginPage("/login")                    // Страница входа
-                        .loginProcessingUrl("/login")           // URL для POST запроса входа
-                        .defaultSuccessUrl("/", true)           // После успешного входа - на главную
-                        .failureUrl("/login?error=true")        // При ошибке - обратно с ошибкой
-                        .usernameParameter("username")          // Параметр для email (по умолчанию)
-                        .passwordParameter("password")          // Параметр для пароля (по умолчанию)
-                        .permitAll()                            // Доступ к форме входа для всех
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/", true)
+                        .failureUrl("/login?error=true")
+                        .permitAll()
                 )
 
-                // ========== ВЫХОД ИЗ СИСТЕМЫ ==========
+                // ========== ВЫХОД ==========
                 .logout(logout -> logout
-                        .logoutUrl("/logout")                   // URL для выхода
-                        .logoutSuccessUrl("/login?logout=true") // После выхода - на страницу входа
-                        .invalidateHttpSession(true)            // Уничтожить сессию
-                        .deleteCookies("JSESSIONID")            // Удалить cookie сессии
-                        .permitAll()                            // Доступ для всех
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
                 )
 
-                // ========== УПРАВЛЕНИЕ СЕССИЯМИ ==========
+                // ========== СЕССИИ ==========
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // Сессии для веб
-                        .maximumSessions(1)                    // Максимум 1 сессия на пользователя
-                        .maxSessionsPreventsLogin(false)       // Разрешить новую сессию, старую завершить
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
                 )
 
-                // ========== CSRF ЗАЩИТА ==========
+                // ========== CSRF ==========
                 .csrf(csrf -> csrf
-                                .ignoringRequestMatchers("/api/**", "/api/auth/**") // Отключаем CSRF для API
-                        // Для веб-форм CSRF включен автоматически
+                        .ignoringRequestMatchers("/api/**", "/api/auth/**")
                 )
 
-                // ========== JWT ФИЛЬТР (для API) ==========
+                // ========== JWT ФИЛЬТР ==========
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // ========== ОБРАБОТКА ОШИБОК ==========
                 .exceptionHandling(exceptions -> exceptions
-                        .accessDeniedPage("/access-denied")    // Страница "Доступ запрещен"
+                        .accessDeniedPage("/access-denied")
                 );
 
         return http.build();
+    }
+
+    // ========== БИНЫ ДЛЯ АУТЕНТИФИКАЦИИ ==========
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService); // ← Используем наш CustomUserDetailsService
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 
     @Bean

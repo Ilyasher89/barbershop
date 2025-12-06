@@ -1,5 +1,6 @@
 package com.example.barbershop;
 
+import com.example.barbershop.service.AppointmentService;
 import com.example.barbershop.service.UserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -15,11 +16,15 @@ public class BarbershopApplication {
 	}
 
 	@Bean
-	@Transactional
-	CommandLineRunner init(UserService userService) {
+	CommandLineRunner initData(UserService userService, AppointmentService appointmentService) {
 		return args -> {
+			// 1. Создаем тестовых пользователей
 			userService.createTestUsers();
+
+			// 2. Создаем тестовые услуги мастеров
+			appointmentService.createTestBarberServices();
+
+			System.out.println("=== ПРИЛОЖЕНИЕ ЗАПУЩЕНО И ГОТОВО К РАБОТЕ ===");
 		};
 	}
-
 }

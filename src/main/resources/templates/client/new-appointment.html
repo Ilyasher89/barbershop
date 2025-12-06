@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Новая запись</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h1>📅 Новая запись</h1>
+
+    <!-- Сообщения об ошибках/успехе -->
+    <div th:if="${param.error}" class="alert alert-danger">
+        Ошибка: <span th:text="${param.error}"></span>
+    </div>
+    <div th:if="${param.success}" class="alert alert-success">
+        ✅ Запись успешно создана!
+    </div>
+
+    <!-- Простая форма -->
+    <form th:action="@{/client/appointments/new}" method="post" th:object="${appointmentRequest}">
+
+        <!-- Выбор мастера и услуги ВМЕСТЕ -->
+        <div class="mb-3">
+            <label class="form-label">Мастер и услуга:</label>
+            <select class="form-select" th:field="*{barberServiceId}" required>
+                <option value="">-- Выберите мастера и услугу --</option>
+                <!-- Группируем: мастер -> его услуги -->
+                <optgroup th:each="barber : ${barbers}"
+                          th:label="${barber.user.firstName} + ' ' + ${barber.user.lastName}">
+
+                    <!-- Получаем услуги этого мастера -->
+                    <option th:each="service : ${barber.barberServices}"
+                            th:value="${service.id}"
+                            th:text="${service.service.name} + ' (' + ${service.actualPrice} + ' руб.)'">
+                    </option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- Дата и время -->
+        <div class="mb-3">
+            <label class="form-label">Дата и время:</label>
+            <input type="datetime-local" class="form-control"
+                   th:field="*{appointmentDateTime}" required>
+        </div>
+
+        <!-- Кнопки -->
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success">Записаться</button>
+            <a href="/client/appointments" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>

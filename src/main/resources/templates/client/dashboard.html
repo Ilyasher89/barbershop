@@ -112,18 +112,16 @@
         </div>
     </div>
 
-    <!-- Быстрые действия -->
     <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card dashboard-card h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">📅 Записаться</h5>
-                    <p class="card-text">Записаться на стрижку или другую услугу</p>
-                    <a href="#" class="btn btn-primary disabled">Скоро</a>
-                    <small class="d-block mt-2 text-muted">(в разработке)</small>
-                </div>
+    <div class="col-md-4 mb-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">📅 Записаться</h5>
+                <p class="card-text">Записаться на стрижку или другую услугу</p>
+                <a href="/client/appointments/new" class="btn btn-primary">Записаться сейчас</a>
             </div>
         </div>
+    </div>
 
         <div class="col-md-4 mb-4">
             <div class="card dashboard-card h-100">
@@ -144,20 +142,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Отладочная информация (убрать в продакшене) -->
-    <div class="alert alert-warning mt-5">
-        <h6>🔧 Отладочная информация:</h6>
-        <p th:if="${user != null}">
-            <strong>Пользователь найден:</strong> <span th:text="${user.email}"></span><br>
-            <strong>Имя:</strong> <span th:text="${user.firstName ?: 'не указано'}"></span><br>
-            <strong>Фамилия:</strong> <span th:text="${user.lastName ?: 'не указано'}"></span><br>
-            <strong>Роль:</strong> <span th:text="${user.role}"></span>
-        </p>
-        <p th:unless="${user != null}">
-            <strong>ОШИБКА:</strong> Пользователь не найден в модели!
-        </p>
     </div>
 </div>
 

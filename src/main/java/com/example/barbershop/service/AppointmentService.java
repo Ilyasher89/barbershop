@@ -1,21 +1,16 @@
 package com.example.barbershop.service;
 
-import com.example.barbershop.entity.Appointment;
-import com.example.barbershop.entity.BarberService;
-import com.example.barbershop.entity.User;
-import com.example.barbershop.repository.AppointmentRepository;
-import com.example.barbershop.repository.BarberServiceRepository;
+import com.example.barbershop.entity.*;
+import com.example.barbershop.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.barbershop.dto.AppointmentResponseDto;
+import java.util.stream.Collectors;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Сервис для управления записями на прием.
- * Содержит бизнес-логику бронирования и проверки доступности.
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,23 +18,23 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final BarberServiceRepository barberServiceRepository;
+    private final UserRepository userRepository;
+    private final ServiceRepository serviceRepository;
+    private final BarberRepository barberRepository;
 
     /**
      * Создать новую запись на прием.
      */
     @Transactional
     public Appointment createAppointment(User client, Long barberServiceId, LocalDateTime dateTime) {
-        // 1. Найти выбранную услугу мастера
         BarberService barberService = barberServiceRepository.findById(barberServiceId)
                 .orElseThrow(() -> new IllegalArgumentException("Услуга мастера не найдена"));
 
-        // 2. Проверить, что время свободно (базовая проверка)
         if (!isTimeSlotAvailable(barberService.getBarber().getId(), dateTime,
                 barberService.getActualDurationMinutes())) {
             throw new IllegalArgumentException("Выбранное время занято");
         }
 
-        // 3. Создать запись
         Appointment appointment = new Appointment();
         appointment.setClient(client);
         appointment.setBarberService(barberService);
@@ -51,24 +46,86 @@ public class AppointmentService {
 
     /**
      * Проверить доступность временного слота для мастера.
-     * Упрощенная версия - проверяет только точное совпадение времени.
      */
     private boolean isTimeSlotAvailable(Long barberId, LocalDateTime startTime, Integer durationMinutes) {
-        // Находим все записи мастера через BarberService
         List<BarberService> barberServices = barberServiceRepository.findByBarberId(barberId);
 
-        // Для каждой услуги мастера проверяем его записи
         for (BarberService bs : barberServices) {
-            // TODO: Реализовать более сложную логику проверки пересечений по времени
-            // Пока просто проверяем, что в это время у мастера нет других записей
             List<Appointment> existingAppointments = appointmentRepository
                     .findByBarberServiceIdAndAppointmentDateTime(bs.getId(), startTime);
 
             if (!existingAppointments.isEmpty()) {
-                return false; // Время занято
+                return false;
             }
         }
-        return true; // Время свободно
+        return true;
+    }
+
+    /**
+     * Создать тестовые услуги мастеров.
+     */
+    @Transactional
+    public void createTestBarberServices() {
+        if (barberServiceRepository.count() == 0) {
+            System.out.println("=== СОЗДАНИЕ ТЕСТОВЫХ УСЛУГ МАСТЕРОВ ===");
+
+            // 1. Найти или создать услуги
+            if (serviceRepository.count() == 0) {
+                ServiceItem haircut = new ServiceItem();
+                haircut.setName("Мужская стрижка");
+                haircut.setDescription("Классическая мужская стрижка");
+                haircut.setBaseDurationMinutes(45);
+                haircut.setBasePrice(1500.0);
+                serviceRepository.save(haircut);
+
+                ServiceItem beard = new ServiceItem();
+                beard.setName("Уход за бородой");
+                beard.setDescription("Стрижка и укладка бороды");
+                beard.setBaseDurationMinutes(30);
+                beard.setBasePrice(800.0);
+                serviceRepository.save(beard);
+
+                ServiceItem complex = new ServiceItem();
+                complex.setName("Стрижка + Борода");
+                complex.setDescription("Комплексная услуга");
+                complex.setBaseDurationMinutes(75);
+                complex.setBasePrice(2000.0);
+                serviceRepository.save(complex);
+
+                System.out.println("Создано 3 услуги");
+            }
+
+            // 2. Найти мастера (User) и связанную сущность Barber
+            User barberUser = userRepository.findByEmail("barber@test.ru")
+                    .orElseThrow(() -> new RuntimeException("Мастер barber@test.ru не найден"));
+
+            // 3. Создать сущность Barber если её нет
+            Barber barber = barberRepository.findByUserId(barberUser.getId())
+                    .orElseGet(() -> {
+                        Barber newBarber = new Barber();
+                        newBarber.setUser(barberUser);
+                        newBarber.setSpecialization("Мужские стрижки");
+                        return barberRepository.save(newBarber);
+                    });
+
+            // 4. Создать связи мастер-услуга
+            List<ServiceItem> allServices = serviceRepository.findAll();
+
+            for (ServiceItem service : allServices) {
+                if (!barberServiceRepository.existsByBarberIdAndServiceId(barber.getId(), service.getId())) {
+                    BarberService bs = new BarberService();
+                    bs.setBarber(barber);
+                    bs.setService(service);
+                    bs.setActualPrice(service.getBasePrice()); // Используем базовую цену
+                    bs.setActualDurationMinutes(service.getBaseDurationMinutes()); // Используем базовую длительность
+                    barberServiceRepository.save(bs);
+
+                    System.out.println("Создана связь: " + barber.getUser().getFirstName() + " - " + service.getName() + " (ID: " + bs.getId() + ")");
+                }
+            }
+
+            System.out.println("=== ГОТОВО: " + barberServiceRepository.count() + " услуг мастеров ===");
+        }
     }
 
     /**
@@ -97,20 +154,17 @@ public class AppointmentService {
         return appointmentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Запись не найдена"));
     }
+
     /**
      * Найти все записи (приемы) конкретного мастера.
      */
     public List<Appointment> findAppointmentsByBarber(Long barberId) {
-        // 1. Находим все услуги, которые предоставляет этот мастер
         List<BarberService> barberServices = barberServiceRepository.findByBarberId(barberId);
 
-        // 2. Собираем ID всех этих услуг мастера
         List<Long> barberServiceIds = barberServices.stream()
                 .map(BarberService::getId)
                 .toList();
 
-        // 3. Находим все записи, связанные с этими услугами мастера
-        // Для этого добавим новый метод в AppointmentRepository
         return appointmentRepository.findByBarberServiceIdIn(barberServiceIds);
     }
 
@@ -119,5 +173,78 @@ public class AppointmentService {
      */
     public List<Appointment> findAll() {
         return appointmentRepository.findAll();
+    }
+    public List<AppointmentResponseDto> getAllAppointmentsAsDto() {
+        return appointmentRepository.findAll().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    public AppointmentResponseDto convertToDto(Appointment appointment) {
+        AppointmentResponseDto dto = new AppointmentResponseDto();
+
+        // Основные поля
+        dto.setId(appointment.getId());
+        dto.setAppointmentDateTime(appointment.getAppointmentDateTime());
+        dto.setStatus(appointment.getStatus().name());
+        dto.setCreatedAt(appointment.getCreatedAt());
+
+        // Информация о клиенте
+        if (appointment.getClient() != null) {
+            User client = appointment.getClient();
+            dto.setClientId(client.getId());
+            dto.setClientEmail(client.getEmail());
+
+            // Объединяем имя и фамилию
+            String clientFullName = "";
+            if (client.getFirstName() != null) {
+                clientFullName += client.getFirstName();
+            }
+            if (client.getLastName() != null) {
+                if (!clientFullName.isEmpty()) {
+                    clientFullName += " ";
+                }
+                clientFullName += client.getLastName();
+            }
+            // Если оба поля пустые - используем email
+            dto.setClientName(clientFullName.isEmpty() ? client.getEmail() : clientFullName);
+        }
+
+        // Информация об услуге и мастере
+        if (appointment.getBarberService() != null) {
+            BarberService barberService = appointment.getBarberService();
+
+            // Услуга
+            if (barberService.getService() != null) {
+                ServiceItem service = barberService.getService();
+                dto.setServiceId(service.getId());
+                dto.setServiceName(service.getName());
+                dto.setServicePrice(service.getBasePrice()); // <-- ИСПРАВЛЕНО!
+            }
+
+            // Мастер
+            if (barberService.getBarber() != null) {
+                Barber barber = barberService.getBarber();
+                dto.setBarberId(barber.getId());
+
+                if (barber.getUser() != null) {
+                    User barberUser = barber.getUser();
+                    // Аналогично для имени мастера
+                    String barberFullName = "";
+                    if (barberUser.getFirstName() != null) {
+                        barberFullName += barberUser.getFirstName();
+                    }
+                    if (barberUser.getLastName() != null) {
+                        if (!barberFullName.isEmpty()) {
+                            barberFullName += " ";
+                        }
+                        barberFullName += barberUser.getLastName();
+                    }
+                    dto.setBarberName(barberFullName.isEmpty() ? barberUser.getEmail() : barberFullName);
+                }
+            }
+        }
+
+        return dto;
     }
 }

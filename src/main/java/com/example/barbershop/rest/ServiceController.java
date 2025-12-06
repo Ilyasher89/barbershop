@@ -1,6 +1,6 @@
 package com.example.barbershop.rest;
 
-import com.example.barbershop.entity.Service;
+import com.example.barbershop.entity.ServiceItem;
 import com.example.barbershop.service.ServiceCatalogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +23,7 @@ public class ServiceController {
      * GET /api/services
      */
     @GetMapping
-    public List<Service> getAllServices() {
+    public List<ServiceItem> getAllServices() {
         return serviceCatalogService.getAllServices();
     }
 
@@ -32,7 +32,7 @@ public class ServiceController {
      * GET /api/services/{id}
      */
     @GetMapping("/{id}")
-    public Service getServiceById(@PathVariable Long id) {
+    public ServiceItem getServiceById(@PathVariable Long id) {
         return serviceCatalogService.getServiceById(id);
     }
 
@@ -42,7 +42,7 @@ public class ServiceController {
      * В теле запроса должен быть JSON с данными услуги.
      */
     @PostMapping
-    public Service createService(@RequestBody Service service) {
+    public ServiceItem createService(@RequestBody ServiceItem service) {
         // TODO: Добавить проверку прав (только ADMIN)
         // TODO: Добавить валидацию данных
         System.out.println("Создание услуги: " + service.getName());

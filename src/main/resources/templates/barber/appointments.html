@@ -17,106 +17,91 @@
 
   <h1 th:text="${pageTitle}"></h1>
 
-  <!-- Фильтры -->
-  <div class="card mt-4">
-    <div class="card-body">
-      <h5 class="card-title">Фильтры записей</h5>
-      <div class="row">
-        <div class="col-md-3">
-          <label class="form-label">Дата</label>
-          <input type="date" class="form-control" value="2024-01-15">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Статус</label>
-          <select class="form-control">
-            <option>Все</option>
-            <option>Ожидают</option>
-            <option>Выполнены</option>
-            <option>Отменены</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Услуга</label>
-          <select class="form-control">
-            <option>Все услуги</option>
-            <option>Стрижка</option>
-            <option>Борода</option>
-            <option>Стрижка + Борода</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">&nbsp;</label>
-          <button class="btn btn-primary w-100">Применить фильтры</button>
+  <!-- Информация о мастере -->
+  <div class="alert alert-info mb-4">
+    <strong>Мастер:</strong>
+    <span th:text="${barber?.firstName} + ' ' + ${barber?.lastName}">Имя Фамилия</span>
+    (<span th:text="${barber?.email}">email</span>)
+  </div>
+
+  <!-- Если записей нет -->
+  <div th:if="${appointments == null or appointments.isEmpty()}"
+       class="alert alert-warning">
+    <h5>📭 Записей пока нет</h5>
+    <p>Клиенты ещё не записывались на ваши услуги.</p>
+  </div>
+
+  <!-- Если есть записи -->
+  <div th:if="${appointments != null and not appointments.isEmpty()}">
+    <div class="card mt-4">
+      <div class="card-body">
+        <h5 class="card-title">
+          📋 Записи клиентов
+          <span class="badge bg-primary" th:text="${appointments.size()}">0</span>
+        </h5>
+
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Время</th>
+              <th>Клиент</th>
+              <th>Услуга</th>
+              <th>Цена</th>
+              <th>Статус</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="app, iter : ${appointments}">
+              <td th:text="${iter.index + 1}">1</td>
+              <td>
+                <!-- БЕЗОПАСНАЯ ПРОВЕРКА НА NULL -->
+                <div th:if="${app.appointmentDateTime != null}">
+                  <strong th:text="${#temporals.format(app.appointmentDateTime, 'dd.MM HH:mm')}">
+                    20.01 13:10
+                  </strong>
+                  <br>
+                  <small class="text-muted"
+                         th:if="${app.serviceDurationMinutes != null}"
+                         th:text="'Длительность: ' + ${app.serviceDurationMinutes} + ' мин'">
+                    Длительность: 45 мин
+                  </small>
+                </div>
+                <div th:if="${app.appointmentDateTime == null}">
+                  <span class="text-muted">Время не указано</span>
+                </div>
+              </td>
+              <td th:text="${app.clientName ?: 'Не указан'}">Иван Иванов</td>
+              <td th:text="${app.serviceName ?: 'Не указана'}">Стрижка</td>
+              <td th:text="${app.servicePrice ?: '0'} + ' ₽'">1500 ₽</td>
+              <td>
+                                    <span th:if="${app.status == 'SCHEDULED'}"
+                                          class="badge bg-primary">Запланирована</span>
+                <span th:if="${app.status == 'COMPLETED'}"
+                      class="badge bg-success">Завершена</span>
+                <span th:if="${app.status == 'CANCELLED'}"
+                      class="badge bg-danger">Отменена</span>
+                <span th:if="${app.status != null and app.status != 'SCHEDULED' and app.status != 'COMPLETED' and app.status != 'CANCELLED'}"
+                      class="badge bg-secondary" th:text="${app.status}">
+                                    </span>
+              </td>
+            </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Таблица записей -->
-  <div class="card mt-4">
-    <div class="card-body">
-      <h5 class="card-title">Записи клиентов</h5>
-
-      <div class="alert alert-info">
-        <p>Здесь будет отображаться таблица с записями клиентов. Функционал в разработке.</p>
-      </div>
-
-      <table class="table">
-        <thead>
-        <tr>
-          <th>Время</th>
-          <th>Клиент</th>
-          <th>Услуга</th>
-          <th>Длительность</th>
-          <th>Цена</th>
-          <th>Статус</th>
-          <th>Действия</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr>
-          <td>10:00</td>
-          <td>Иван Иванов</td>
-          <td>Стрижка</td>
-          <td>45 мин</td>
-          <td>1500 ₽</td>
-          <td><span class="badge bg-warning">Ожидает</span></td>
-          <td>
-            <button class="btn btn-sm btn-success" disabled>Начать</button>
-            <button class="btn btn-sm btn-outline-danger" disabled>Отменить</button>
-          </td>
-        </tr>
-        <tr>
-          <td>14:00</td>
-          <td>Петр Петров</td>
-          <td>Борода</td>
-          <td>30 мин</td>
-          <td>800 ₽</td>
-          <td><span class="badge bg-info">Подтверждена</span></td>
-          <td>
-            <button class="btn btn-sm btn-success" disabled>Начать</button>
-          </td>
-        </tr>
-        <tr>
-          <td>16:00</td>
-          <td>Сергей Сергеев</td>
-          <td>Стрижка + Борода</td>
-          <td>60 мин</td>
-          <td>2000 ₽</td>
-          <td><span class="badge bg-secondary">Запланирована</span></td>
-          <td>
-            <button class="btn btn-sm btn-outline-primary" disabled>Подтвердить</button>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-
-      <div class="mt-4">
-        <a href="/barber/dashboard" class="btn btn-primary">← Назад в панель</a>
-        <button class="btn btn-outline-success ms-2" disabled>Добавить запись</button>
-      </div>
-    </div>
+  <!-- Действия -->
+  <div class="mt-4">
+    <a href="/barber/dashboard" class="btn btn-primary">← Назад в панель</a>
+    <button class="btn btn-outline-secondary ms-2" onclick="location.reload()">
+      🔄 Обновить список
+    </button>
   </div>
 </div>
+
 </body>
 </html>

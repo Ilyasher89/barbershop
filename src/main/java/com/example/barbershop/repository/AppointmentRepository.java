@@ -26,7 +26,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     /**
      * Найти записи по услуге мастера и времени.
      */
-    List<Appointment> findByBarberServiceIdAndAppointmentDateTime(Long barberServiceId, LocalDateTime dateTime);
+    List<Appointment> findByBarberServiceIdInAndAppointmentDateTimeBetween(
+            List<Long> barberServiceIds,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 
 
     /**
@@ -40,4 +44,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
      * Проверить, есть ли пересекающиеся записи у мастера.
      * Этот метод будет реализован в сервисе.
      */
+    List<Appointment> findByBarberServiceId(Long barberServiceId);
+
+
 }

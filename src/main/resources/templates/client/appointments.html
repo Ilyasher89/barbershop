@@ -54,6 +54,7 @@
                     <th>Услуга</th>
                     <th>Мастер</th>
                     <th>Статус</th>
+                    <th>Действия</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -71,6 +72,20 @@
                               class="badge bg-danger">Отменена</span>
                         <span th:if="${app.status == 'NO_SHOW'}"
                               class="badge bg-warning">Не явился</span>
+                    </td>
+                    <td>
+                        <div th:if="${app.status == 'SCHEDULED'}">
+                            <form th:action="@{/client/appointments/{id}/cancel(id=${app.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Отменить запись на ${app.serviceName}?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    ❌ Отменить
+                                </button>
+                            </form>
+                        </div>
+                        <div th:if="${app.status != 'SCHEDULED'}">
+                            <span class="text-muted">—</span>
+                        </div>
                     </td>
                 </tr>
                 </tbody>

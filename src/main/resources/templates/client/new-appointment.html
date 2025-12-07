@@ -4,53 +4,286 @@
     <meta charset="UTF-8">
     <title>Новая запись</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .time-slot-btn {
+            padding: 6px 3px;
+            font-size: 0.85rem;
+            margin: 1px;
+            width: 100%;
+            min-height: 40px;
+        }
+        .time-slot-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .time-slot-btn.active {
+            background-color: #0d6efd !important;
+            color: white !important;
+            border-color: #0d6efd !important;
+        }
+        .time-table th {
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+            padding: 8px 4px;
+        }
+        .time-table td {
+            padding: 2px;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-4">
     <h1>📅 Новая запись</h1>
 
-    <!-- Сообщения об ошибках/успехе -->
-    <div th:if="${param.error}" class="alert alert-danger">
-        Ошибка: <span th:text="${param.error}"></span>
+    <!-- Сообщения об ошибках -->
+    <div th:if="${errorMessage != null}" class="alert alert-danger">
+        <strong>❌ Ошибка!</strong> <span th:text="${errorMessage}"></span>
     </div>
-    <div th:if="${param.success}" class="alert alert-success">
+    <div th:if="${param.success != null}" class="alert alert-success">
         ✅ Запись успешно создана!
     </div>
 
-    <!-- Простая форма -->
     <form th:action="@{/client/appointments/new}" method="post" th:object="${appointmentRequest}">
-
-        <!-- Выбор мастера и услуги ВМЕСТЕ -->
+        <!-- Выбор мастера и услуги -->
         <div class="mb-3">
             <label class="form-label">Мастер и услуга:</label>
-            <select class="form-select" th:field="*{barberServiceId}" required>
+            <select class="form-select" th:field="*{barberServiceId}" required id="barberServiceSelect">
                 <option value="">-- Выберите мастера и услугу --</option>
-                <!-- Группируем: мастер -> его услуги -->
                 <optgroup th:each="barber : ${barbers}"
                           th:label="${barber.user.firstName} + ' ' + ${barber.user.lastName}">
-
-                    <!-- Получаем услуги этого мастера -->
                     <option th:each="service : ${barber.barberServices}"
                             th:value="${service.id}"
-                            th:text="${service.service.name} + ' (' + ${service.actualPrice} + ' руб.)'">
+                            th:text="${service.service.name} + ' (' + ${service.actualPrice} + ' руб., ' + ${service.actualDurationMinutes} + ' мин)'">
                     </option>
                 </optgroup>
             </select>
         </div>
 
-        <!-- Дата и время -->
+        <!-- Выбор даты -->
         <div class="mb-3">
-            <label class="form-label">Дата и время:</label>
-            <input type="datetime-local" class="form-control"
-                   th:field="*{appointmentDateTime}" required>
+            <label class="form-label">Дата:</label>
+            <input type="date" class="form-control" id="dateSelect" required>
         </div>
 
-        <!-- Кнопки -->
+        <!-- Выбор времени ТАБЛИЦЕЙ -->
+        <div class="mb-3">
+            <label class="form-label">Выберите время:</label>
+            <div class="table-responsive">
+                <table class="table table-bordered time-table">
+                    <!-- Первая строка: заголовки -->
+                    <tr>
+                        <th>10:00-12:00</th>
+                        <th>12:00-14:00</th>
+                        <th>14:00-16:00</th>
+                        <th>16:00-18:00</th>
+                    </tr>
+                    <!-- Вторая строка: утренние слоты -->
+                    <tr>
+                        <!-- 10:00-12:00 -->
+                        <td>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="10:00" onclick="selectTimeSlot(this)">10:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="10:15" onclick="selectTimeSlot(this)">10:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="10:30" onclick="selectTimeSlot(this)">10:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="10:45" onclick="selectTimeSlot(this)">10:45</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="11:00" onclick="selectTimeSlot(this)">11:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="11:15" onclick="selectTimeSlot(this)">11:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="11:30" onclick="selectTimeSlot(this)">11:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="11:45" onclick="selectTimeSlot(this)">11:45</button>
+                        </td>
+                        <!-- 12:00-14:00 -->
+                        <td>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="12:00" onclick="selectTimeSlot(this)">12:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="12:15" onclick="selectTimeSlot(this)">12:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="12:30" onclick="selectTimeSlot(this)">12:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="12:45" onclick="selectTimeSlot(this)">12:45</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="13:00" onclick="selectTimeSlot(this)">13:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="13:15" onclick="selectTimeSlot(this)">13:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="13:30" onclick="selectTimeSlot(this)">13:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="13:45" onclick="selectTimeSlot(this)">13:45</button>
+                        </td>
+                        <!-- 14:00-16:00 -->
+                        <td>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="14:00" onclick="selectTimeSlot(this)">14:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="14:15" onclick="selectTimeSlot(this)">14:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="14:30" onclick="selectTimeSlot(this)">14:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="14:45" onclick="selectTimeSlot(this)">14:45</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="15:00" onclick="selectTimeSlot(this)">15:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="15:15" onclick="selectTimeSlot(this)">15:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="15:30" onclick="selectTimeSlot(this)">15:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="15:45" onclick="selectTimeSlot(this)">15:45</button>
+                        </td>
+                        <!-- 16:00-18:00 -->
+                        <td>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="16:00" onclick="selectTimeSlot(this)">16:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="16:15" onclick="selectTimeSlot(this)">16:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="16:30" onclick="selectTimeSlot(this)">16:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="16:45" onclick="selectTimeSlot(this)">16:45</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="17:00" onclick="selectTimeSlot(this)">17:00</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="17:15" onclick="selectTimeSlot(this)">17:15</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="17:30" onclick="selectTimeSlot(this)">17:30</button><br>
+                            <button type="button" class="btn btn-outline-primary time-slot-btn" data-time="17:45" onclick="selectTimeSlot(this)">17:45</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <small class="text-muted">Рабочие часы: 10:00 - 18:00, слоты по 15 минут</small>
+        </div>
+
+        <!-- Скрытое поле -->
+        <input type="hidden" th:field="*{appointmentDateTime}" id="appointmentDateTimeInput">
+
+        <!-- Кнопка ЗАПИСАТЬСЯ прямо под таблицей -->
         <div class="mt-4">
-            <button type="submit" class="btn btn-success">Записаться</button>
-            <a href="/client/appointments" class="btn btn-secondary">Отмена</a>
+            <button type="submit" class="btn btn-success btn-lg w-100">
+                <i class="bi bi-calendar-check"></i> ЗАПИСАТЬСЯ
+            </button>
+            <div class="text-center mt-2">
+                <a href="/client/appointments" class="btn btn-link">или посмотреть мои записи</a>
+            </div>
         </div>
     </form>
 </div>
+
+<script>
+    let selectedDate = '';
+    let selectedTime = '';
+
+    // Устанавливаем завтрашнюю дату по умолчанию
+    document.addEventListener('DOMContentLoaded', function() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const year = tomorrow.getFullYear();
+        const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const day = String(tomorrow.getDate()).padStart(2, '0');
+
+        selectedDate = `${year}-${month}-${day}`;
+        const dateSelect = document.getElementById('dateSelect');
+        dateSelect.value = selectedDate;
+
+        // Минимум - сегодня
+        const today = new Date().toISOString().split('T')[0];
+        dateSelect.min = today;
+
+        // Максимум +30 дней
+        const maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 30);
+        const maxDateStr = maxDate.toISOString().split('T')[0];
+        dateSelect.max = maxDateStr;
+
+        // При изменении даты проверяем слоты
+        dateSelect.addEventListener('change', function() {
+            selectedDate = this.value;
+            updateDateTime();
+            checkAvailableSlots();
+        });
+
+        // При изменении услуги тоже проверяем слоты
+        document.getElementById('barberServiceSelect').addEventListener('change', function() {
+            if (selectedDate) {
+                checkAvailableSlots();
+            }
+        });
+
+        updateDateTime();
+        checkAvailableSlots();
+    });
+
+    // Выбор времени
+    function selectTimeSlot(button) {
+        if (button.disabled) return;
+
+        document.querySelectorAll('.time-slot-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+        });
+
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-primary', 'active');
+        selectedTime = button.dataset.time;
+        updateDateTime();
+    }
+
+    // Обновляем скрытое поле
+    function updateDateTime() {
+        if (selectedDate && selectedTime) {
+            const dateTimeString = `${selectedDate}T${selectedTime}`;
+            document.getElementById('appointmentDateTimeInput').value = dateTimeString;
+            console.log("Выбрано время:", dateTimeString);
+        }
+    }
+
+    // Проверка занятых слотов
+    async function checkAvailableSlots() {
+        const barberServiceId = document.getElementById('barberServiceSelect').value;
+        if (!barberServiceId || !selectedDate) return;
+
+        // Временно блокируем все кнопки
+        document.querySelectorAll('.time-slot-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        });
+
+        try {
+            const response = await fetch(
+                `/client/api/occupied-slots?barberServiceId=${barberServiceId}&date=${selectedDate}`
+            );
+            const occupiedSlots = await response.json();
+            console.log("Занятые слоты:", occupiedSlots);
+
+            // Обновляем кнопки
+            document.querySelectorAll('.time-slot-btn').forEach(btn => {
+                const time = btn.dataset.time;
+                const isOccupied = occupiedSlots.includes(time);
+
+                btn.disabled = isOccupied;
+                btn.textContent = time;
+
+                if (isOccupied) {
+                    btn.classList.remove('btn-outline-primary', 'btn-primary', 'active');
+                    btn.classList.add('btn-outline-secondary');
+                    btn.title = 'Время занято';
+                } else {
+                    btn.classList.remove('btn-outline-secondary', 'btn-primary', 'active');
+                    btn.classList.add('btn-outline-primary');
+                    btn.title = '';
+                }
+
+                // Если это выбранное время, подсвечиваем
+                if (time === selectedTime && !isOccupied) {
+                    btn.classList.add('btn-primary', 'active');
+                }
+            });
+        } catch (error) {
+            console.error('Ошибка при проверке слотов:', error);
+            // Включаем все кнопки при ошибке
+            document.querySelectorAll('.time-slot-btn').forEach(btn => {
+                btn.disabled = false;
+                btn.textContent = btn.dataset.time;
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-outline-primary');
+            });
+        }
+    }
+
+    // Проверка перед отправкой
+    document.querySelector('form').addEventListener('submit', function(event) {
+        if (!selectedDate || !selectedTime) {
+            alert('Пожалуйста, выберите дату и время!');
+            event.preventDefault();
+            return;
+        }
+
+        const selectedBtn = document.querySelector(`.time-slot-btn[data-time="${selectedTime}"]`);
+        if (selectedBtn && selectedBtn.disabled) {
+            alert('Выбранное время стало занято. Обновите страницу и выберите другое время.');
+            event.preventDefault();
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

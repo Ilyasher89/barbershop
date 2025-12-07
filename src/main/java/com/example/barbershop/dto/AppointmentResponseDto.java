@@ -8,6 +8,7 @@ public class AppointmentResponseDto {
     private Long id;
     private LocalDateTime appointmentDateTime;
     private String status;
+    private Integer serviceDurationMinutes;
 
     // Информация о клиенте
     private Long clientId;

@@ -1,6 +1,6 @@
 package com.example.barbershop.config;
 
-import com.example.barbershop.security.CustomUserDetailsService; // ← Добавить импорт
+import com.example.barbershop.security.CustomUserDetailsService;
 import com.example.barbershop.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

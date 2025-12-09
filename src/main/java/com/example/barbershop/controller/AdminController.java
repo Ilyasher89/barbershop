@@ -1,9 +1,12 @@
 package com.example.barbershop.controller;
 
 import com.example.barbershop.entity.User;
+import com.example.barbershop.security.CustomUserDetails;
+import com.example.barbershop.service.StatisticsService;
 import com.example.barbershop.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,16 +14,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
     private final UserService userService;
+    private final StatisticsService statisticsService;
 
     @Autowired
-    public AdminController(UserService userService) {
+    public AdminController(UserService userService, StatisticsService statisticsService) {
         this.userService = userService;
+        this.statisticsService = statisticsService;
     }
 
     /**
@@ -100,13 +106,23 @@ public class AdminController {
      * Статистика системы
      */
     @GetMapping("/statistics")
-    public String statistics(Model model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User admin = userService.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Администратор не найден"));
+    public String statistics(Model model,
+                             @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null || !userDetails.getUser().getRole().equals(User.Role.ADMIN)) {
+            return "redirect:/";
+        }
 
-        model.addAttribute("admin", admin);
+        // Получаем все виды статистики
+        Map<String, Object> generalStats = statisticsService.getGeneralStatistics();
+        Map<String, Object> weeklyStats = statisticsService.getWeeklyStatistics();
+        Map<String, Object> barberStats = statisticsService.getBarberStatistics();
+        Map<String, Object> serviceStats = statisticsService.getServiceStatistics();
+
+        model.addAttribute("generalStats", generalStats);
+        model.addAttribute("weeklyStats", weeklyStats);
+        model.addAttribute("barberStats", barberStats);
+        model.addAttribute("serviceStats", serviceStats);
+        model.addAttribute("user", userDetails.getUser());
         model.addAttribute("pageTitle", "Статистика системы");
 
         return "admin/statistics";

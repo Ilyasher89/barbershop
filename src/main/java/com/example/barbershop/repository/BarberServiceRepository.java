@@ -26,4 +26,5 @@ public interface BarberServiceRepository extends JpaRepository<BarberService, Lo
      * Проверяет, существует ли уже связь мастер-услуга.
      */
     boolean existsByBarberIdAndServiceId(Long barberId, Long serviceId);
+    long countByServiceId(Long serviceId);
 }

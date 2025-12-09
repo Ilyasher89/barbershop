@@ -2,59 +2,231 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${pageTitle} + ' | Парикмахерская'">Статистика системы</title>
+    <title>Статистика системы</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .stat-card {
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/">Главная</a></li>
-            <li class="breadcrumb-item"><a href="/admin/dashboard">Панель администратора</a></li>
-            <li class="breadcrumb-item active" th:text="${pageTitle}"></li>
-        </ol>
-    </nav>
-
-    <h1 th:text="${pageTitle}"></h1>
-
-    <div class="alert alert-warning">
-        <h5>📈 Статистика в разработке</h5>
-        <p>Функционал подробной статистики будет добавлен после реализации:</p>
-        <ul>
-            <li>Системы записей на услуги</li>
-            <li>Финансовых операций</li>
-            <li>Посещаемости</li>
-            <li>Графиков и диаграмм</li>
-        </ul>
+<div class="container-fluid py-4">
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-graph-up"></i> Статистика системы</h1>
+            <p class="lead">Аналитика работы парикмахерской</p>
+        </div>
+        <div>
+            <a href="/admin/dashboard" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Назад в панель
+            </a>
+        </div>
     </div>
 
-    <!-- Заглушки для будущих графиков -->
-    <div class="row mt-4">
-        <div class="col-md-6">
+    <!-- Общая статистика -->
+    <div class="row mb-4">
+        <div class="col-12">
             <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-house-door"></i> Общая статистика</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Распределение пользователей по ролям</h5>
-                    <div style="height: 300px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
-                        <p class="text-muted">Здесь будет круговая диаграмма</p>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card stat-card bg-light">
+                                <div class="card-body text-center">
+                                    <div class="stat-number text-primary" th:text="${generalStats.totalUsers}">0</div>
+                                    <div class="stat-label">Всего пользователей</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card stat-card bg-light">
+                                <div class="card-body text-center">
+                                    <div class="stat-number text-success" th:text="${generalStats.clients}">0</div>
+                                    <div class="stat-label">Клиентов</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card stat-card bg-light">
+                                <div class="card-body text-center">
+                                    <div class="stat-number text-warning" th:text="${generalStats.barbers}">0</div>
+                                    <div class="stat-label">Мастеров</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card stat-card bg-light">
+                                <div class="card-body text-center">
+                                    <div class="stat-number text-info" th:text="${generalStats.totalAppointments}">0</div>
+                                    <div class="stat-label">Всего записей</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Статусы записей</h6>
+                                    <div>✅ Запланировано: <strong th:text="${generalStats.scheduledAppointments}">0</strong></div>
+                                    <div>🏁 Завершено: <strong th:text="${generalStats.completedAppointments}">0</strong></div>
+                                    <div>❌ Отменено: <strong th:text="${generalStats.cancelledAppointments}">0</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Финансы</h6>
+                                    <div>💰 Общая выручка: <strong th:text="${generalStats.totalRevenue}">0 ₽</strong></div>
+                                    <div>📊 Средний чек: <strong th:text="${generalStats.averageCheck}">0 ₽</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Услуги</h6>
+                                    <div>✂️ Всего услуг: <strong th:text="${generalStats.totalServices}">0</strong></div>
+                                    <div>👨‍🔧 Услуг мастеров: <strong th:text="${generalStats.totalBarberServices}">0</strong></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Статистика за неделю -->
+    <div class="row mb-4">
         <div class="col-md-6">
             <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-week"></i> За последние 7 дней</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Посещаемость по дням</h5>
-                    <div style="height: 300px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
-                        <p class="text-muted">Здесь будет линейный график</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card stat-card">
+                                <div class="card-body text-center">
+                                    <div class="stat-number text-success" th:text="${weeklyStats.newUsers}">0</div>
+                                    <div class="stat-label">Новых пользователей</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card stat-card">
+                                <div class="card-body text-center">
+                                    <div class="stat-number text-primary" th:text="${weeklyStats.newAppointments}">0</div>
+                                    <div class="stat-label">Новых записей</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Выручка за неделю:</h6>
+                        <div class="display-4 text-success" th:text="${weeklyStats.weeklyRevenue}">0 ₽</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика по мастерам -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Мастера</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="badge bg-warning">Всего мастеров: <span th:text="${barberStats.totalBarbers}">0</span></span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                            <tr>
+                                <th>Мастер</th>
+                                <th>Записи</th>
+                                <th>Выручка</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="barber : ${barberStats.barbers}">
+                                <td th:text="${barber.name}">Имя</td>
+                                <td><span class="badge bg-info" th:text="${barber.appointmentsCount}">0</span></td>
+                                <td th:text="${barber.revenue}">0 ₽</td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="mt-4">
-        <a href="/admin/dashboard" class="btn btn-primary">← Назад в панель</a>
+    <!-- Статистика по услугам -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-scissors"></i> Популярность услуг</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>Услуга</th>
+                                <th>Цена</th>
+                                <th>Длительность</th>
+                                <th>Записей</th>
+                                <th>Мастеров</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="service : ${serviceStats.services}">
+                                <td th:text="${service.name}">Услуга</td>
+                                <td th:text="${service.price} + ' ₽'">0 ₽</td>
+                                <td><span class="badge bg-secondary" th:text="${service.duration} + ' мин'">0 мин</span></td>
+                                <td><span class="badge bg-primary" th:text="${service.appointmentsCount}">0</span></td>
+                                <td><span class="badge bg-warning" th:text="${service.barbersCount}">0</span></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка обновления -->
+    <div class="text-center mt-4">
+        <button class="btn btn-primary" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Обновить статистику
+        </button>
+        <small class="text-muted d-block mt-2">Данные обновляются в реальном времени</small>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

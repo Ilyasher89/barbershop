@@ -66,7 +66,7 @@ public class AppointmentController {
                     appointmentDto.getAppointmentDateTime()
             );
 
-            // ВОТ ИСПРАВЛЕНИЕ: возвращаем DTO, а не Entity
+
             AppointmentResponseDto responseDto = convertToDto(appointment);
             return ResponseEntity.ok(responseDto);
 

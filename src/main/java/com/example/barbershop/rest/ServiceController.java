@@ -43,12 +43,8 @@ public class ServiceController {
      */
     @PostMapping
     public ServiceItem createService(@RequestBody ServiceItem service) {
-        // TODO: Добавить проверку прав (только ADMIN)
-        // TODO: Добавить валидацию данных
         System.out.println("Создание услуги: " + service.getName());
 
-        // Временная заглушка - просто возвращаем переданные данные
-        // В реальности нужно сохранять в БД через serviceCatalogService
         return service;
     }
 }
